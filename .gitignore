@@ -1,0 +1,69 @@
+# Consolidated ignores for APEX/ORDS/Oracle project
+
+# Python/venv
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Node/npm (if used by tooling)
+node_modules/
+npm-debug.log*
+yarn.lock
+package-lock.json
+
+# Env and secrets
+.env
+.env.*
+env/.env
+*.env
+**/secrets/**
+**/*_secrets.*
+
+# ORDS bundles and generated configs
+# Ignore full ORDS distribution and large binaries
+ords-latest/
+ords-latest.zip
+ords-latest/ords.war
+*.war
+infra/ords/params/*.properties
+**/ords/config/**
+**/ords/standalone/**
+
+# Build/artifacts/temp
+build/
+artifacts/
+dist/
+tmp/
+.tmp/
+*.zip
+*.gz
+*.tar
+*.tar.gz
+
+# Local scratch files (never commit)
+cli chatgpt.txt
+
+# Dumps & logs
+*.dmp
+*.log
+*.bak
+*.tmp
+logs/
+
+# APEX exports (keep only curated minimal exports)
+apex/app_*_export*.sql
+apex/app_*.sql
+apex/exports/
+
+# OS junk
+.DS_Store
+Thumbs.db
+.Trash-*
+
+# IDE/editor
+.vscode/
+.idea/
+*.swp

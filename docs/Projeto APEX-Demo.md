@@ -1,0 +1,406 @@
+Projeto APEX - Demo
+
+Governança e Status
+====================
+
+Status Global: Parcialmente Concluído — ORDS e endpoints básicos OK; APEX export e `pkg_otc` completos pendentes.
+
+Resumo do que já foi alcançado
+- [x] ORDS funcional em `http://<host>:8181/ords/otc/api/otc/` com módulo `otc_api`.
+- [x] Endpoints validados: `GET /health`, `GET /orders`, `POST /orders/:id/approve`, `POST /site/lead`.
+- [~] Schema inicial (orders, items, leads) criado; revisar índices, FKs adicionais e auditoria.
+- [~] Package de aprovação (`otc_pkg_approve`) presente; `pkg_otc` completo pendente (submit/simulate + logs).
+- [x] Documentação `docs/DEMO_SCRIPT.md` criada com passos de instalação e testes.
+- [ ] APEX App (APP_ID=100): export `apex/app_100_min_otc.sql` e esboço Page Designer P200/P210 pendentes.
+
+Dúvidas/Definições Fracas (a resolver)
+- Autenticação REST: Basic obrigatório agora; JWT opcional mais adiante? Escopo por endpoint.
+- Export APEX: versionar sempre ou por release/tag? Trade-off difs grandes.
+- Auditoria: triggers por tabela vs. logging em package + tabela `otc_audit_events`.
+- Seed de dados: volume e anonimização.
+
+Próximas Ações (Sprint Curta)
+- Implementar `pkg_otc.pks/pkb` com `submit`, `approve`, `simulate_invoice_total` e logs (`apex_debug` + `dbms_output`).
+- Esboçar Page Designer P200/P210 e preparar export mínimo.
+- Habilitar autenticação (Basic) no módulo ORDS e documentar `Authorization`.
+- Preparar Makefile para `export-app`, `import-app`, `db-bootstrap`.
+
+1) Escopo (MVP em 7–10 telas)
+
+Tema: OTC Lite para EBS: catálogo → pedido → aprovação → faturamento simulado → KPIs.
+
+Telas APEX
+
+Status por Página (Checklist)
+- [ ] P000 Login/Landing — pendente
+- [ ] P100 Clientes — pendente
+- [ ] P110 Itens — pendente
+- [ ] P200 Pedidos — esboço pendente
+- [ ] P210 Aprovação — esboço pendente
+- [ ] P300 Faturamento Simulado — pendente
+- [ ] P400 Dashboard — pendente
+- [ ] P900 Admin — pendente
+- [ ] P910 APIs — pendente
+
+P000 (Login + Landing): cards com métricas (Pedidos Hoje, Lead Time médio, Top 5 clientes).
+
+P100 (Clientes): CRUD com validações (CNPJ/CPF), pesquisa e filtros.
+
+P110 (Itens): CRUD com estoque simulado.
+
+P200 (Pedidos): master-detail (pedido + linhas), gatilhos de negócio (status).
+
+P210 (Aprovação): workflow simples (pendente → aprovado → rejeitado).
+
+P300 (Faturamento Simulado): cálculo de tributos básicos (regra PL/SQL).
+
+P400 (Dashboard): gráficos (por status, por UF, ticket médio).
+
+P900 (Admin): auditoria, parâmetros, usuários/ACL.
+
+P910 (APIs): catálogo de endpoints REST (swagger estático + exemplos).
+
+Destaques para avaliação
+
+SQL/PLSQL (packages, triggers, views materializadas).
+
+REST via ORDS/APEX (CRUD + ação “aprovar pedido”).
+
+UX/JS/CSS (interação, validações, máscaras).
+
+DevOps/CI (export app, migra de schemas, ambientes).
+
+Governança (nomenclatura, padrão de branches, ACL, auditoria).
+
+2) Arquitetura de implantação (VPS)
+
+Stack
+
+Oracle Database 21c XE (ou 19c se já tiver).
+
+Oracle APEX 23.x
+
+ORDS 24.x (modo standalone ou sob Tomcat)
+
+NGINX (reverse proxy + TLS/Let’s Encrypt)
+
+Git (GitHub/Bitbucket) + runner local (GitHub Actions usando self-hosted runner simples ou apenas scripts cron/Makefile).
+
+Topologia
+
+Internet ─▶ NGINX (443)
+             └─▶ ORDS (localhost:8181)
+                   └─▶ APEX + DB (localhost:1521)
+
+
+Segurança rápida
+
+NGINX com HTTPS + HTTP→HTTPS.
+
+ORDS apenas em 127.0.0.1.
+
+Usuários APEX com ACL por role (admin, power-user, viewer).
+
+Variáveis sensíveis em .env/ords/params (git-ignored).
+
+Política de backup: export app + datapump schema diário.
+
+3) Repositório Git (monorepo simples)
+apex-otc-lite/
+├─ .github/workflows/          # opcional (CI local tb ok)
+├─ infra/
+│  ├─ nginx/
+│  │  └─ fiscai_apex.conf
+│  ├─ ords/
+│  │  ├─ params/ords_params.properties.example
+│  │  └─ scripts/install_ords.sh
+│  └─ scripts/
+│     ├─ install_db_apex.sh
+│     ├─ create_schema.sql
+│     ├─ seed_data.sql
+│     ├─ enable_rest.sql
+│     ├─ export_apex.sh        # exporta app + objetos
+│     ├─ import_apex.sh
+│     └─ verify_health.sh
+├─ db/
+│  ├─ schema/
+│  │  ├─ tables.sql
+│  │  ├─ views.sql
+│  │  ├─ packages/
+│  │  │  ├─ pkg_otc.pks
+│  │  │  └─ pkg_otc.pkb
+│  │  └─ triggers.sql
+│  └─ data/
+│     └─ seeds/*.sql
+├─ apex/
+│  ├─ app_100_min_otc.sql      # export do APEX
+│  └─ static/swagger.json
+├─ rest/
+│  ├─ ords_modules.sql
+│  └─ examples/*.http
+├─ web/
+│  └─ css/js overrides
+├─ env/
+│  ├─ .env.example
+│  └─ README_ENV.md
+├─ docs/
+│  ├─ ARCHITECTURE.md
+│  ├─ DEMO_SCRIPT.md
+│  ├─ SECURITY.md
+│  ├─ OPERATIONS.md
+│  └─ EVIDENCE_CHECKLIST.md
+├─ Makefile
+└─ README.md
+
+
+.gitignore essencial
+
+env/.env
+infra/ords/params/*.properties
+*.dmp
+*.log
+apex/app_*_export*.sql   # se quiser evitar difs grandes; ou manter
+
+4) Objetos de Banco (OTC Lite)
+
+Tabelas (trecho)
+
+create table otc_customers (
+  customer_id      number generated by default as identity primary key,
+  name             varchar2(120) not null,
+  tax_id           varchar2(18)  not null, -- CPF/CNPJ
+  uf               varchar2(2),
+  email            varchar2(150),
+  phone            varchar2(20),
+  created_at       timestamp default systimestamp
+);
+
+create table otc_items (
+  item_id          number generated by default as identity primary key,
+  sku              varchar2(40) not null unique,
+  description      varchar2(200),
+  uom              varchar2(10)  default 'UN',
+  list_price       number(12,2)  not null,
+  stock_qty        number(12,2)  default 0
+);
+
+create table otc_orders (
+  order_id         number generated by default as identity primary key,
+  customer_id      number not null references otc_customers(customer_id),
+  status           varchar2(20) default 'PENDENTE',
+  order_date       date default trunc(sysdate),
+  approved_by      varchar2(60),
+  approved_at      date
+);
+
+create table otc_order_lines (
+  line_id          number generated by default as identity primary key,
+  order_id         number not null references otc_orders(order_id),
+  item_id          number not null references otc_items(item_id),
+  qty              number(12,2) not null,
+  unit_price       number(12,2) not null,
+  line_total       number(12,2) generated always as (qty*unit_price) virtual
+);
+
+
+Package de negócio (trecho)
+
+create or replace package pkg_otc as
+  procedure submit_order(p_order_id in number);
+  procedure approve_order(p_order_id in number, p_user in varchar2);
+  function  simulate_invoice_total(p_order_id in number) return number;
+end;
+/
+create or replace package body pkg_otc as
+  procedure submit_order(p_order_id in number) is
+  begin
+    update otc_orders set status='EM_ANALISE' where order_id=p_order_id;
+  end;
+  procedure approve_order(p_order_id in number, p_user in varchar2) is
+  begin
+    update otc_orders
+       set status='APROVADO', approved_by=p_user, approved_at=sysdate
+     where order_id=p_order_id;
+  end;
+  function simulate_invoice_total(p_order_id in number) return number is
+    v_total number;
+  begin
+    select sum(line_total) into v_total
+      from otc_order_lines where order_id=p_order_id;
+    -- ponto de extensão: regra fiscal básica (ICMS/ISS/…)
+    return v_total;
+  end;
+end;
+/
+
+
+REST (ORDS) – módulo mínimo
+
+begin
+  ords.enable_schema(p_enabled => true, p_schema => user, p_url_mapping_type => 'BASE_PATH', p_url_mapping_pattern => 'otc', p_auto_rest_auth => true);
+
+  ords.define_module(p_module_name=>'otc_api', p_base_path=>'/api/otc/', p_items_per_page=>50);
+  ords.define_template(p_module_name=>'otc_api', p_pattern=>'orders');
+  ords.define_handler(
+    p_module_name=>'otc_api', p_pattern=>'orders', p_method=>'GET', p_source_type=>'json/collection',
+    p_source=>'select o.order_id, o.status, c.name customer, o.order_date from otc_orders o join otc_customers c on c.customer_id=o.customer_id');
+  ords.define_template(p_module_name=>'otc_api', p_pattern=>'orders/:id/approve');
+  ords.define_handler(
+    p_module_name=>'otc_api', p_pattern=>'orders/:id/approve', p_method=>'POST', p_source_type=>'plsql/block',
+    p_source=>'begin pkg_otc.approve_order(:id, :current_user); end;');
+  commit;
+end;
+/
+
+5) CI/CD & Operações
+
+Export da aplicação (SQLcl)
+
+# infra/scripts/export_apex.sh
+#!/usr/bin/env bash
+set -euo pipefail
+: "${DB_USER:?}" "${DB_PASS:?}" "${DB_CONN:?}" "${APP_ID:=100}"
+sql -s ${DB_USER}/${DB_PASS}@${DB_CONN} <<SQL
+BEGIN
+  apex_export.set_application_id(p_application_id => ${APP_ID});
+  apex_export.export_application(p_application_id => ${APP_ID});
+END;
+/
+SQL
+mv f${APP_ID}.sql ../../apex/app_${APP_ID}_min_otc.sql
+echo "APEX app ${APP_ID} exportada."
+
+
+Import da aplicação (SQLcl)
+
+# infra/scripts/import_apex.sh
+#!/usr/bin/env bash
+set -euo pipefail
+: "${DB_USER:?}" "${DB_PASS:?}" "${DB_CONN:?}" "${APP_ID:=100}"
+sql ${DB_USER}/${DB_PASS}@${DB_CONN} @../../apex/app_${APP_ID}_min_otc.sql
+
+
+Makefile (atalhos)
+
+ENV?=dev
+APP_ID?=100
+
+export-app:
+	@DB_USER=$(DB_USER) DB_PASS=$(DB_PASS) DB_CONN=$(DB_CONN) APP_ID=$(APP_ID) bash infra/scripts/export_apex.sh
+
+import-app:
+	@DB_USER=$(DB_USER) DB_PASS=$(DB_PASS) DB_CONN=$(DB_CONN) APP_ID=$(APP_ID) bash infra/scripts/import_apex.sh
+
+db-bootstrap:
+	sql ${DB_USER}/${DB_PASS}@${DB_CONN} @infra/scripts/create_schema.sql
+	sql ${DB_USER}/${DB_PASS}@${DB_CONN} @infra/scripts/seed_data.sql
+	sql ${DB_USER}/${DB_PASS}@${DB_CONN} @infra/scripts/enable_rest.sql
+
+health:
+	bash infra/scripts/verify_health.sh
+
+
+NGINX (trecho)
+
+server {
+  listen 443 ssl;
+  server_name apex.sua_marca.com.br;
+
+  ssl_certificate     /etc/letsencrypt/live/apex.sua_marca.com.br/fullchain.pem;
+  ssl_certificate_key /etc/letsencrypt/live/apex.sua_marca.com.br/privkey.pem;
+
+  location / {
+    proxy_pass http://127.0.0.1:8181/ords/;  # ORDS standalone
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-Proto https;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+  }
+}
+
+6) Roteiro de Demonstração (15–20 min)
+
+Governança & Repo (2 min) — mostrar docs/, infra/, db/, branches e convenções.
+
+BD & PLSQL (4 min) — tabelas, package pkg_otc, trigger de auditoria.
+
+APEX UX (6 min) — P200 (pedido) e workflow P210 (aprovar), validações, JS para máscara de CNPJ.
+
+REST (3 min) — POST /api/otc/orders/:id/approve via cURL/Insomnia; usar JWT/Basic de teste.
+
+CI/CD (3 min) — make export-app e commit; make import-app em env “stage”.
+
+Métricas & Operação (2 min) — verify_health.sh, logs ORDS, NGINX access/error.
+
+Checklist de Evidências (docs/EVIDENCE_CHECKLIST.md)
+
+ SQL, PL/SQL, pacotes e triggers
+
+ APEX completo (páginas, regiões, processos, validações, DA)
+
+ REST ORDS com ação de negócio
+
+ UX com custom JS/CSS
+
+ CI/CD (export/import + Makefile)
+
+ Segurança (ACL, HTTPS, ORDS localhost)
+
+ Documentação (ARCHITECTURE, OPERATIONS, SECURITY)
+
+
+
+Contexto do Projeto:
+
+App APEX (APP_ID 100) com páginas P000, P100, P110, P200, P210, P300, P400, P900, P910.
+
+DB 21c XE; ORDS 24.x; NGINX como proxy TLS.
+
+Package central pkg_otc com operações: submit, approve, simulate_invoice_total.
+
+REST via ORDS sob /api/otc/… com autenticação básica ou JWT.
+Estilo de Saída:
+
+Forneça código executável (SQL/PLSQL, APEX export snippets, ORDS SQL, JS/CSS).
+
+Quando der opções, explique trade-offs.
+
+Inclua passos de teste (SQL*Plus/SQLcl, cURL/HTTPie) e checagens.
+
+Evite verbosidade; use blocos de código, checklists e diffs.
+Tarefa Inicial:
+
+Gere db/schema/tables.sql completo (conforme esqueleto acima) com constraints, índices e FKs.
+
+Gere db/schema/packages/pkg_otc.pks/pkb com logs de auditoria via apex_debug (fallback para dbms_output).
+
+Gere rest/ords_modules.sql com GET /orders e POST /orders/:id/approve.
+
+Esboce Page Designer (componentes) de P200 e P210 (regiões, itens, processos, validações, DA) em formato de lista estruturada.
+
+DB + APEX + ORDS (VPS)
+
+Instale XE/19c → APEX 23.x → ORDS 24.x (standalone 8181).
+
+Rode infra/scripts/install_db_apex.sh (você versiona os comandos).
+
+NGINX + SSL
+
+Crie infra/nginx/fiscai_apex.conf (trecho acima), habilite site, certbot --nginx.
+
+Schema & dados
+
+make db-bootstrap
+
+APEX App
+
+Crie app no APEX (APP_ID 100) com páginas listadas.
+
+make export-app para versionar.
+
+REST
+
+sql @rest/ords_modules.sql → teste com curl.
+
+Demo
+
+Siga docs/DEMO_SCRIPT.md; colete prints em docs/evidence/.

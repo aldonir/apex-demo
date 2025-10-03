@@ -1,0 +1,20 @@
+### Base URL
+# http://<host>:8181/ords/otc/api/otc/
+
+### Health
+GET http://localhost:8181/ords/otc/api/otc/health
+Accept: application/json
+
+### List orders
+GET http://localhost:8181/ords/otc/api/otc/orders
+Accept: application/json
+
+### Approve order
+POST http://localhost:8181/ords/otc/api/otc/orders/1/approve
+Accept: application/json
+
+### Capture lead email
+POST http://localhost:8181/ords/otc/api/otc/site/lead
+Content-Type: application/x-www-form-urlencoded
+
+email=test@example.com&source=web

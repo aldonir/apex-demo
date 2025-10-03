@@ -1,0 +1,24 @@
+name: Smoke
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Instalar dependências para cURL/jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Lint & Smoke (cURL ORDS)
+        env:
+          ORDS_BASE_URL: ${{ secrets.ORDS_BASE_URL }}
+          BASIC_AUTH_B64: ${{ secrets.BASIC_AUTH_B64 }}
+          JWT_TOKEN: ${{ secrets.JWT_TOKEN }}
+        run: |
+          bash scripts/smoke.sh
