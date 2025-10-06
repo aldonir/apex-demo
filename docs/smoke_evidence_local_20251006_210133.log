@@ -1,0 +1,60 @@
+[smoke] lint rápido em SQL (anti-queda de produção)
+[smoke] ✅ Lint básico OK
+[smoke] testando GET /api/otc/orders
+HTTP 500
+[smoke] ❌ GET /orders falhou
+{
+    "code": "InternalServerError",
+    "title": "Internal Server Error",
+    "message": "Contact your system administrator and provide the request ECID for further diagnostics of this issue.",
+    "type": "tag:oracle.com,2020:error/InternalServerError",
+    "instance": "tag:oracle.com,2020:ecid/Kvy6TdR7aZj2avZYKDR9zw"
+}
+==== EXTRA CURL HEALTH ====
+HTTP/1.1 500 Server Error
+Content-Type: application/problem+json
+Content-Length: 323
+
+{
+    "code": "InternalServerError",
+    "title": "Internal Server Error",
+    "message": "Contact your system administrator and provide the request ECID for further diagnostics of this issue.",
+    "type": "tag:oracle.com,2020:error/InternalServerError",
+    "instance": "tag:oracle.com,2020:ecid/y-t11OD2LoZG5w1Sz-4rDg"
+}
+==== EXTRA CURL ORDERS ====
+HTTP/1.1 500 Server Error
+Content-Type: application/problem+json
+Content-Length: 323
+
+{
+    "code": "InternalServerError",
+    "title": "Internal Server Error",
+    "message": "Contact your system administrator and provide the request ECID for further diagnostics of this issue.",
+    "type": "tag:oracle.com,2020:error/InternalServerError",
+    "instance": "tag:oracle.com,2020:ecid/WNxC8IKonsyZdh4V6Krl1w"
+}
+==== EXTRA CURL APPROVE ====
+HTTP/1.1 500 Server Error
+Content-Type: application/problem+json
+Content-Length: 323
+
+{
+    "code": "InternalServerError",
+    "title": "Internal Server Error",
+    "message": "Contact your system administrator and provide the request ECID for further diagnostics of this issue.",
+    "type": "tag:oracle.com,2020:error/InternalServerError",
+    "instance": "tag:oracle.com,2020:ecid/8-hNOXt1jLiJS_4guzONDA"
+}
+==== EXTRA CURL LEAD ====
+HTTP/1.1 500 Server Error
+Content-Type: application/problem+json
+Content-Length: 323
+
+{
+    "code": "InternalServerError",
+    "title": "Internal Server Error",
+    "message": "Contact your system administrator and provide the request ECID for further diagnostics of this issue.",
+    "type": "tag:oracle.com,2020:error/InternalServerError",
+    "instance": "tag:oracle.com,2020:ecid/XpbI3aA7dmIiA9VWNHOaYw"
+}
